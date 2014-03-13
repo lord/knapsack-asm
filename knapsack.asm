@@ -1,37 +1,46 @@
 %include "os_dependent_stuff.asm"
 
 
-;;; --- MACRO -----------------------------------------------
+;;; --- MACRO ---
 ;;; print msg,length
 %macro print 2 ; %1 = address %2 = # of chars
- ; pushad ; save all registers
- mov rax, SYSCALL_WRITE
- mov rdi, 1
- mov rsi, %1
- mov rdx, %2
- mov rbx, 1
- syscall
- ; popad ; restore all registers
+  ; save registers
+  push rax
+  push rdi
+  push rsi
+
+  ; write to stdout
+  mov rax, SYSCALL_WRITE
+  mov rdi, 1
+  mov rsi, %1
+  mov rdx, %2
+  syscall
+
+  ; restore registers
+  pop rsi
+  pop rdi
+  pop rax
 %endmacro
 
-;;; --- MACRO -----------------------------------------------
+;;; --- MACRO ---
 ;;; print2 "quoted string"
 %macro print2 1 ; %1 = immediate string,
  section .data
-%%str db %1
-%%strL equ $-%%str
+   %%str db %1
+   %%strL equ $-%%str
  section .text
- print %%str, %%strL
+   print %%str, %%strL
 %endmacro
 
   ; mov rax, input_data
   ; jmp str_to_dec
   ; call str_to_dec
 
-  print2 `testing\n`
-
+  print2 `testing!\n`
   mov rax, SYSCALL_EXIT
   mov rdi, rbx
+
+
   syscall
 
 input_data:
