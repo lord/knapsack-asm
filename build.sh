@@ -1,5 +1,5 @@
 # Generate object file from assembly:
-nasm -f macho64 -o knapsack.o knapsack.asm
+nasm -f elf64 -o knapsack.o -g -F dwarf knapsack.asm
 
 # Link object file:
 ld knapsack.o -o knapsack
