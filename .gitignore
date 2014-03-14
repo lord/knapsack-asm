@@ -4,6 +4,9 @@
 *.obj
 *.elf
 
+# Vagrant
+.vagrant
+
 # Libraries
 *.lib
 *.a
