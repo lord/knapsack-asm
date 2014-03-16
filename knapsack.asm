@@ -8,8 +8,20 @@ section .bss
 section .text
 
   call open_file
-  print buffer, r8
-  jmp program_end
+
+  mov rax, buffer
+  call str_to_dec
+  mov r9, rbx ; save first number
+
+  inc rax
+  call str_to_dec
+  mov r10, rbx ; save second number
+
+  add r9, r10 ; add r10 into r9
+
+  mov rdi, r9
+  mov rax, SYSCALL_EXIT
+  syscall
 
 input_data:
   db "53 a3", 0
@@ -19,12 +31,13 @@ file_name:
 
 ; accept null terminated string pointed to by rax
 ; parses integer and puts into rbx
+; advances rax to the first non-integer character read
 ; stops reading number after any non-integer character
 ; is read
 str_to_dec:
-  push rcx ; save contents of rcx
+  push rcx
   mov rbx, 0 ; eventual output register
-  mov rcx, 0 ; for tracking the current position in the string
+  mov rcx, 0 ; for holding the current character being tested
 
 str_to_dec_loop:
   mov cl, [rax]
