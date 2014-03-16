@@ -9,34 +9,38 @@ section .bss
 
 section .data
 file_name:
-  db "data/hello_world.txt", 0
+  db "data/1.txt", 0
 
 section .text
 
   call open_file
   call convert_file
 
-  mov rax, num_buf
-  add rax, 0
-  mov rdi, [rax]
+  ; mov rax, num_buf
+  ; add rax, 0
+  ; mov rdi, [rax]
+  mov rdi, r14
   mov rax, SYSCALL_EXIT
   syscall
 
 ; converts contents of buffer into integers in the num_buf buffer
 ; length of buffer is specified by r8
+; returns number of integers in buffer in r14
 convert_file:
   mov rcx, num_buf ; current position in num_buf buffer
   mov rax, buffer ; current position in text buffer
+  mov r14, 0
 
 convert_file_loop:
   call str_to_dec
   mov [rcx], rbx
   inc rax
   inc rcx
-  mov rdx, rcx
-  sub rdx, num_buf
+  inc r14
+  mov rdx, rax
+  sub rdx, buffer
   cmp rdx, r8
-  jl convert_file_loop ; if (rcx-num_buf) < r8
+  jl convert_file_loop ; if (rax-buffer) < r8
   ret
 
 ; accept null terminated string pointed to by rax
