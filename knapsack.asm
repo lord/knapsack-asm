@@ -7,22 +7,11 @@ section .bss
 
 section .text
 
-  mov rax, input_data
-  call str_to_dec
-
-  mov rdi, rbx
-  mov rax, SYSCALL_EXIT
-  syscall
-
-  jmp open_file
-
-  print2 `testing!\n`
-  mov rax, SYSCALL_EXIT
-  mov rdi, rbx
-  syscall
+  call open_file
+  print buffer, r8
+  jmp program_end
 
 input_data:
-  ; db `4 11\n8 4\n10 5\n15 8\n4 3`, 0
   db "53 a3", 0
 
 file_name:
@@ -33,25 +22,36 @@ file_name:
 ; stops reading number after any non-integer character
 ; is read
 str_to_dec:
-  mov rbx, 0
-  mov rcx, 0
+  push rcx ; save contents of rcx
+  mov rbx, 0 ; eventual output register
+  mov rcx, 0 ; for tracking the current position in the string
 
 str_to_dec_loop:
   mov cl, [rax]
   cmp rcx, 48
-  jl return  ; if rcx < 60
+  jl str_to_dec_return  ; if rcx < 60
   cmp rcx, 57
-  jg return  ; if rcx > 71
+  jg str_to_dec_return  ; if rcx > 71
 
   imul rbx, 10 ; rbx *= 10
   sub rcx, 48
   add rbx, rcx
-
-str_to_dec_loop_end:
   inc rax
   jmp str_to_dec_loop
 
+str_to_dec_return:
+  pop rcx
+  ret
+
+; reads the file file_name into the buffer buffer
+; and the bytes read into r8
+; exits the program if failed
 open_file:
+  push rax
+  push rdi
+  push rsi
+  push rdx
+  push r9
   mov rax, SYSCALL_OPEN
   mov rdi, file_name
   mov rsi, O_RDONLY
@@ -64,10 +64,7 @@ open_file:
   jmp program_end
 
 open_file_success:
-  print2 `File open success!\n`
-  jmp read_file
-
-read_file:
+  ; file open success! now we will load the file into the buffer
   mov rdi, rax ; move file descriptor to rdi
   mov r9, rax ; also save file descriptor in r9
   mov rax, SYSCALL_READ
@@ -76,16 +73,16 @@ read_file:
   syscall
   mov r8, rax ; save bytes read
 
-  print buffer, r8
-  jmp close_file
-
-close_file:
+  ; close the file and return
   mov rax, SYSCALL_CLOSE
   mov rdi, r9 ; set file descriptor
   syscall
-  jmp program_end
 
-return:
+  pop r9
+  pop rdx
+  pop rsi
+  pop rdi
+  pop rax
   ret
 
 program_end:
