@@ -4,30 +4,40 @@
 section .bss
   MAXBUF equ 100000
   buffer resb MAXBUF ; 100,000 bytes of storage
+  MAXNUM equ 100000
+  numbers resb MAXNUM ; 100,000 bytes of storage
+
+section .data
+file_name:
+  db "data/hello_world.txt", 0
 
 section .text
 
   call open_file
+  call convert_file
 
-  mov rax, buffer
-  call str_to_dec
-  mov r9, rbx ; save first number
-
-  inc rax
-  call str_to_dec
-  mov r10, rbx ; save second number
-
-  add r9, r10 ; add r10 into r9
-
-  mov rdi, r9
+  mov rax, numbers
+  add rax, 3
+  mov rdi, [rax]
   mov rax, SYSCALL_EXIT
   syscall
 
-input_data:
-  db "53 a3", 0
+; converts contents of buffer into integers in the numbers buffer
+; length of buffer is specified by r8
+convert_file:
+  mov rcx, numbers ; current position in numbers buffer
+  mov rax, buffer ; current position in text buffer
 
-file_name:
-  db "data/hello_world.txt", 0
+convert_file_loop:
+  call str_to_dec
+  mov [rcx], rbx
+  inc rax
+  inc rcx
+  mov rdx, rcx
+  sub rdx, numbers
+  cmp rdx, r8
+  jl convert_file_loop ; if (rcx-numbers) < r8
+  ret
 
 ; accept null terminated string pointed to by rax
 ; parses integer and puts into rbx
