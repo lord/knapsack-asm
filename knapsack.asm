@@ -5,7 +5,7 @@ section .bss
   MAXBUF equ 100000
   buffer resb MAXBUF ; 100,000 bytes of storage
   MAXNUM equ 100000
-  numbers resb MAXNUM ; 100,000 bytes of storage
+  num_buf resb MAXNUM ; 100,000 bytes of storage
 
 section .data
 file_name:
@@ -16,16 +16,16 @@ section .text
   call open_file
   call convert_file
 
-  mov rax, numbers
-  add rax, 3
+  mov rax, num_buf
+  add rax, 0
   mov rdi, [rax]
   mov rax, SYSCALL_EXIT
   syscall
 
-; converts contents of buffer into integers in the numbers buffer
+; converts contents of buffer into integers in the num_buf buffer
 ; length of buffer is specified by r8
 convert_file:
-  mov rcx, numbers ; current position in numbers buffer
+  mov rcx, num_buf ; current position in num_buf buffer
   mov rax, buffer ; current position in text buffer
 
 convert_file_loop:
@@ -34,9 +34,9 @@ convert_file_loop:
   inc rax
   inc rcx
   mov rdx, rcx
-  sub rdx, numbers
+  sub rdx, num_buf
   cmp rdx, r8
-  jl convert_file_loop ; if (rcx-numbers) < r8
+  jl convert_file_loop ; if (rcx-num_buf) < r8
   ret
 
 ; accept null terminated string pointed to by rax
