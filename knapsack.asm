@@ -8,7 +8,11 @@ section .bss
 section .text
 
   mov rax, input_data
-  ; call str_to_dec
+  call str_to_dec
+
+  mov rdi, rbx
+  mov rax, SYSCALL_EXIT
+  syscall
 
   jmp open_file
 
@@ -19,25 +23,25 @@ section .text
 
 input_data:
   ; db `4 11\n8 4\n10 5\n15 8\n4 3`, 0
-  db "15", 0
+  db "53 a3", 0
 
 file_name:
   db "data/hello_world.txt", 0
 
 ; accept null terminated string pointed to by rax
 ; parses integer and puts into rbx
+; stops reading number after any non-integer character
+; is read
 str_to_dec:
   mov rbx, 0
   mov rcx, 0
 
 str_to_dec_loop:
   mov cl, [rax]
-  cmp rcx, 0
-  je return
   cmp rcx, 48
-  jl str_to_dec_loop_end  ; if rcx < 60
+  jl return  ; if rcx < 60
   cmp rcx, 57
-  jg str_to_dec_loop_end  ; if rcx > 71
+  jg return  ; if rcx > 71
 
   imul rbx, 10 ; rbx *= 10
   sub rcx, 48
