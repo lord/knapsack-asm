@@ -65,6 +65,7 @@ open_file_success:
 
 read_file:
   mov rdi, rax ; move file descriptor to rdi
+  mov r9, rax ; also save file descriptor in r9
   mov rax, SYSCALL_READ
   mov rsi, buffer ; set buffer address for file contents
   mov rdx, MAXBUF
@@ -72,6 +73,12 @@ read_file:
   mov r8, rax ; save bytes read
 
   print buffer, r8
+  jmp close_file
+
+close_file:
+  mov rax, SYSCALL_CLOSE
+  mov rdi, r9 ; set file descriptor
+  syscall
   jmp program_end
 
 return:
