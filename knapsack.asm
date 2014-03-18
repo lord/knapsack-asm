@@ -1,17 +1,6 @@
 %include "os_dependent_stuff.asm"
 %include "std.asm"
 
-%macro shlt 2 ; %1 = register to shift %2 = register with number of times to shift, will be killed
-%%jmp_point:
-  dec %2
-  test %2, %2
-  js %%loop_end ; if %2 < 0
-  shl %1, 1
-  jmp %%jmp_point
-%%loop_end:
-%endmacro
-
-
 section .bss
   MAXBUF equ 100000
   buffer resb MAXBUF ; 100,000 bytes of storage
@@ -26,31 +15,43 @@ section .text
 
   call open_file
   call convert_file
+  jmp knapsack_start
+
+;   mov r10, num_buf
+; testblah:
+;   mov r11, qword [r10]
+; foo:
+;   add r10, 8
+;   cmp qword [r10], qword 0
+;   jne testblah
 
 knapsack_start:
   mov r10, -1 ; cursor depth
   mov r11, 0 ; cursor position/choices
-  mov r12, num_buf ; item pointer
+  mov r12, num_buf ; item pointer, points to item just added or ignored by cursor
   mov r13, 0 ; best solution choices
   mov r14, 0 ; best solution value
-  mov r15, 0 ; best solution weight
+  mov r15, 11 ; maximum weight of knapsack TODO READ FROM FILE NOT JUST 11
   mov r8, 0 ; current value of selections
   mov r9, 0 ; current weight of selections
   mov rdx, -1 ; last move, -1 for movement down, 0 for up from non-selection, 1 for up from selection
+
   jmp knapsack_down_node_no_select
 
 knapsack_node_start:
   cmp rdx, 1
   je knapsack_node_check_up
 
+  ; check if current weight is greater than capacity, if true, go up
+  cmp r9, r15
+  jg knapsack_node_check_up
+
   ; going down, check if at bottom
-  cmp [r12], byte 0
-  jne knapsack_node_check_down
   mov rax, r12
-  inc rax
-  cmp [rax], byte 0
+  add rax, 16
+  cmp qword [rax], qword 0
   jne knapsack_node_check_down
-  ; weight and value are 0, so this is the bottom
+  ; next value is 0, so this is the bottom
   ; we need to compare this weight and value with max, to see if best
   cmp r8, r14
   jle knapsack_up_node
@@ -58,8 +59,7 @@ knapsack_node_start:
 best_solution_found:
   mov r13, r11
   mov r14, r8
-  mov r15, r9
-  print2 `new best solution!\n`
+  ; print2 `new best solution!\n`
   jmp knapsack_up_node
 
 knapsack_node_check_down:
@@ -70,7 +70,7 @@ knapsack_node_check_down:
 
 knapsack_node_check_up:
   ; going up, check if already at top
-  cmp r10, 0
+  cmp r10, -1
   je program_end
   jmp knapsack_up_node
 
@@ -78,41 +78,34 @@ knapsack_down_node_select:
   inc r10 ; increment cursor depth
   push r8 ; push current value to stack
   push r9 ; push current weight to stack
-  push byte 1 ; push choice onto the stack
-  add r12, 2 ; move item pointer up by two
-  add r8, [r12] ; add value of new item
-  inc r12
-  add r9, [r12] ; add weight of new item
-  dec r12
+  push qword 1 ; push choice onto the stack
+  add r12, 16
+  add r8, qword [r12] ; add value of new item
+  add r12, 8
+  add r9, qword [r12] ; add weight of new item
+  sub r12, 8
 
   ; set bit #r10 in r11 to 1
-  mov rax, 1
-  mov rbx, r10
-  shlt rax, rbx
-  or r11, rax
+  bts r11, r10
   jmp knapsack_node_start
 
 knapsack_down_node_no_select:
   inc r10 ; increment cursor depth
   push r8 ; push current value to stack
   push r9 ; push current weight to stack
-  push byte 0 ; push choice onto the stack
-  add r12, 2 ; move item pointer up by two
+  push qword 0 ; push choice onto the stack
+  add r12, 16
   mov rdx, -1 ; push last move to rdx
 
   ; set bit #r10 in r11 to 0
-  mov rax, 1
-  mov rbx, r10
-  shlt rax, rbx
-  not rax
-  and r11, rax
+  btr r11, r10
   jmp knapsack_node_start
 
 knapsack_up_node:
   pop rdx ; pop last selection to rdx
   pop r9 ; pop current weight
   pop r8 ; pop current value
-  sub r12, 2 ; move item pointer down by two
+  sub r12, 16 ; move item pointer down by two
   dec r10 ; decrement cursor depth
   jmp knapsack_node_start
 
@@ -121,20 +114,22 @@ knapsack_up_node:
 ; number buffer ends with two 0s
 convert_file:
   mov rax, buffer ; current position in text buffer
-  mov rcx, num_buf ; current position in num_buf buffer
+  mov r9, num_buf ; current position in num_buf buffer
 
 convert_file_loop:
   call str_to_dec
-  mov [rcx], rbx
+  mov qword [r9], rbx
   inc rax
-  inc rcx
+  ; inc rcx
+  add r9, 8
   mov rdx, rax
   sub rdx, buffer
   cmp rdx, r8
   jl convert_file_loop ; if (rax-buffer) < r8
-  mov [rcx], byte 0
-  inc rcx
-  mov [rcx], byte 0
+  mov qword [r9], qword 0
+  ; inc rcx
+  add r9, 8
+  mov qword [r9], qword 0
   ret
 
 ; accept null terminated string pointed to by rax
