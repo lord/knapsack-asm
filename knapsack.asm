@@ -31,7 +31,7 @@ knapsack_start:
   mov r12, num_buf ; item pointer, points to item just added or ignored by cursor
   mov r13, 0 ; best solution choices
   mov r14, 0 ; best solution value
-  mov r15, 11 ; maximum weight of knapsack TODO READ FROM FILE NOT JUST 11
+  mov r15, 11000 ; maximum weight of knapsack TODO READ FROM FILE NOT JUST 11
   mov r8, 0 ; current value of selections
   mov r9, 0 ; current weight of selections
   mov rdx, -1 ; last move, -1 for movement down, 0 for up from non-selection, 1 for up from selection
@@ -84,6 +84,7 @@ knapsack_down_node_select:
   add r12, 8
   add r9, qword [r12] ; add weight of new item
   sub r12, 8
+  mov rdx, -1 ; push last move to rdx
 
   ; set bit #r10 in r11 to 1
   bts r11, r10
